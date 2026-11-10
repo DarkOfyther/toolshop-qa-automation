@@ -1,12 +1,26 @@
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from pages.login_page import LoginPage
+
 
 class ProductPage:
 
-    URL = "https://practicesoftwaretesting.com/product/01M70M1ZC1QT4C590D2JF44H4V"
+    URL_LOGIN = "https://practicesoftwaretesting.com/auth/login"
+
+    BOTAO_HOME = (
+        By.CSS_SELECTOR,
+        '[data-test="nav-home"]'
+    )
+
+    PRIMEIRO_PRODUTO = (
+        By.XPATH,
+        "/html/body/app-root/div[2]/app-overview/"
+        "div[3]/div[2]/div[1]/a[1]/div[2]/h5"
+    )
 
     CAMPO_QUANTIDADE = (By.ID, "quantity-input")
 
@@ -27,14 +41,47 @@ class ProductPage:
 
     def __init__(self, driver):
         self.driver = driver
-        self.wait = WebDriverWait(driver, 10)
+        self.wait = WebDriverWait(driver, 15)
 
     def abrir(self):
-        self.driver.get(self.URL)
+        # 1 - Login administrativo
+        self.driver.get(self.URL_LOGIN)
+
+        login = LoginPage(self.driver)
+
+        login.realizar_login(
+            "admin@practicesoftwaretesting.com",
+            "welcome01"
+        )
+
+        self.wait.until(
+            EC.url_contains("/admin/dashboard")
+        )
+
+        # 2 - Acessar Home
+        self.wait.until(
+            EC.element_to_be_clickable(self.BOTAO_HOME)
+        ).click()
+
+        # 3 - Selecionar primeiro produto
+        produto = self.wait.until(
+            EC.element_to_be_clickable(self.PRIMEIRO_PRODUTO)
+        )
+
+        produto.click()
+
+        # 4 - Aguardar componente do produto
+        self.wait.until(
+            EC.visibility_of_element_located(
+                self.CAMPO_QUANTIDADE
+            )
+        )
 
     def informar_quantidade(self, quantidade):
         campo = self.wait.until(
-            EC.visibility_of_element_located(self.CAMPO_QUANTIDADE)
+            EC.visibility_of_element_located(
+                self.CAMPO_QUANTIDADE
+            )
         )
 
         campo.clear()
@@ -43,7 +90,9 @@ class ProductPage:
 
     def obter_quantidade(self):
         campo = self.wait.until(
-            EC.visibility_of_element_located(self.CAMPO_QUANTIDADE)
+            EC.visibility_of_element_located(
+                self.CAMPO_QUANTIDADE
+            )
         )
 
         return campo.get_attribute("value")
